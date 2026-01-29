@@ -107,7 +107,7 @@ void modyfikuj_bohatera(Hero* head) {
     int licznik = 0;
     while(current) {
         if (strcmp(current->imie, imie) == 0) {
-            printf("Edycja bohatera: %s (Imie niezmienialne)\n");
+            printf("Edycja bohatera: %s (Imie niezmienialne)\n, current->imie");
             licznik++;
             printf("Nowy poziom: ");
             scanf("%d", &current->poziom);
