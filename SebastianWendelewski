@@ -107,7 +107,7 @@ void modyfikuj_bohatera(Hero* head) {
     int licznik = 0;
     while(current) {
         if (strcmp(current->imie, imie) == 0) {
-            printf("Edycja bohatera: %s (Imie niezmienialne)\n")
+            printf("Edycja bohatera: %s (Imie niezmienialne)\n");
             licznik++;
             printf("Nowy poziom: ");
             scanf("%d", &current->poziom);
@@ -219,12 +219,21 @@ Hero* rejestracja(Hero* head) {
         return head;
     }
 
-    printf("Podaj reputacje (0-100): ");
-    scanf("%d", &nowy->reputacja);
-
-    nowy->status = AKTYWNY;
-
-    nowy->next = head;
+    while(1) {
+        printf("Podaj reputacje (0-100): ");
+        if (scanf("%d", &nowy->reputacja) != 1) {
+            printf("Blad: To nie jest liczba!\n");
+            while(getchar() != '\n');
+            continue;
+        }
+        if (nowy->reputacja < 0 || nowy->reputacja > 100) {
+            printf("Blad: Reputacja musi miescic sie w zakresie od 0 do 100!\n");
+        }
+        else
+            break;
+    }
+        nowy->status = AKTYWNY;
+        nowy->next = head;
 
     printf("Bohater %s zostal pomyslnie dodany do rejestru.\n", nowy->imie);
 
@@ -271,35 +280,42 @@ Hero* usun_bohatera(Hero* head, char* imie_do_usuniecia) {
 Hero* wczytaj_z_pliku(Hero* head, const char* nazwa_pliku) {
     FILE* plik = fopen(nazwa_pliku, "r");
 
-    if (plik == NULL) {
+    if (plik == NULL) 
         printf("Plik '%s' nie istnieje. Rozpoczynanie z pustym rejestrem.\n", nazwa_pliku);
         return head;
-    }
 
     char t_imie[101], t_rasa[50];
     int t_poziom, t_reputacja, t_status;
     int licznik = 0;
+    int linia = 1;
 
+    while (!feof(plik)) {
+        int wynik = fscanf(plik, "%100s %49s %d %d %d", t_imie, t_rasa, &t_poziom, &t_reputacja, &t_status);
 
-    while (fscanf(plik, "%100s %49s %d %d %d", t_imie, t_rasa, &t_poziom, &t_reputacja, &t_status) == 5) {
-        Hero* nowy = (Hero*)malloc(sizeof(Hero));
-        if (nowy == NULL) break;
-
-        strcpy(nowy->imie, t_imie);
-        strcpy(nowy->rasa, t_rasa);
-        nowy->poziom = t_poziom;
-        nowy->reputacja = t_reputacja;
-        nowy->status = (Status)t_status;
-
-        nowy->next = head;
-        head = nowy;
-        licznik++;
+        if (wynik == 5) {
+            Hero* nowy = (Hero*)malloc(sizeof(Hero));
+            if (nowy == NULL) break;
+            strcpy(nowy->imie, t_imie);
+            strcpy(nowy->rasa, t_rasa);
+            nowy->poziom = t_poziom;
+            nowy->reputacja = t_reputacja;
+            nowy->status = (Status)t_status;
+            nowy->next = head;
+            head = nowy;
+            licznik++;
+        }
+        else if (wynik > 0 && wynik < 5) {
+            fprintf(stderr, "Blad: Niepoprawny format danych w linii %d pliku '%s'!\n", linia, nazwa_pliku);
+            break;
+        }
+        linia++;
     }
 
     fclose(plik);
     if (licznik > 0) {
         printf("Pomyslnie wczytano %d bohaterow z pliku.\n", licznik);
     }
+    
     return head;
 }
 
@@ -349,17 +365,18 @@ void zwolnij_liste(Hero* head) {
 
 int main(int liczba_arg, char *v_arg[]) {
 
-    if (liczba_arg < 2) {
-        printf("Blad! Musisz podac nazwe pliku. Przyklad:\n");
-        printf("%s moja_baza.txt\n", v_arg[0]);
+    if (liczba_arg < 3) {
+        printf("Blad! Musisz podac nazwy plikow. Przyklad:\n");
+        printf("%s rejestr_wej.txt rejestr_wyj.txt\n", v_arg[0]);
         return 1;
     }
 
-    char *nazwa_pliku = v_arg[1];
+    char *nazwa_pliku_wej = v_arg[1];
+    char *nazwa_pliku_wyj = v_arg[2];
     Hero *head = NULL;
     int wybor;
 
-    head = wczytaj_z_pliku(head, nazwa_pliku);
+    head = wczytaj_z_pliku(head, nazwa_pliku_wej);
 
     printf("--- Rejestr Bohaterow Gildii Poszukiwaczy Przygod ---\n");
 
@@ -412,7 +429,7 @@ int main(int liczba_arg, char *v_arg[]) {
                 break;
 
             case 7:
-                zapisz_do_pliku(head, nazwa_pliku);
+                zapisz_do_pliku(head, nazwa_pliku_wyj);
                 break;
 
             case 8:
