@@ -1,0 +1,430 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef enum { AKTYWNY, NA_MISJI, RANNY, ZAGINIONY, ZAWIESZONY } Status;
+
+const char* status_na_string(Status s) {
+    switch (s) {
+        case AKTYWNY:   return "Aktywny";
+        case NA_MISJI:  return "Na misji";
+        case RANNY:     return "Ranny";
+        case ZAGINIONY: return "Zaginiony";
+        case ZAWIESZONY: return "Zawieszony";
+        default:        return "Nieznany";
+    }
+}
+typedef struct Hero {
+    char imie[101];
+    char rasa[50];
+    int poziom;
+    int reputacja;
+    Status status;
+    struct Hero* next;
+} Hero;
+
+void wyswietl_liste(Hero* head) {
+    if (head == NULL) {
+        printf("\nRejestr jest obecnie pusty\n");
+        return;
+    }
+
+    printf("\n%-20s | %-12s | %-6s | %-10s | %-12s\n",
+           "IMIE", "RASA", "POZIOM", "REPUTACJA", "STATUS");
+    printf("---------------------------------------------------------------------------\n");
+
+    Hero* current = head;
+    while (current != NULL) {
+        printf("%-20s | %-12s | %-6d | %-10d | %-12s\n",
+               current->imie,
+               current->rasa,
+               current->poziom,
+               current->reputacja,
+               status_na_string(current->status));
+
+        current = current->next;
+    }
+    printf("---------------------------------------------------------------------------\n");
+}
+
+void wyszukaj_bohatera(Hero* head) {
+    int tryb;
+    int licznik = 0;
+    printf("\nSzukaj wedlug:\n1. Imienia\n2. Minimalnego poziomu\nWybor: ");
+    while(1) {
+    if (scanf("%d", &tryb) != 1) {
+            printf("Blad: Podaj liczbe!\n");
+            while(getchar() != '\n');
+    }
+    else {
+            break;
+    }
+    }
+
+    if (tryb == 1) {
+        char szukane[101];
+        printf("Podaj imie: ");
+        scanf("%100s", szukane);
+        int len = strlen(szukane);
+        Hero* current = head;
+        while(current != NULL) {
+            if (strncmp(current->imie, szukane, len) == 0) {
+                printf("Znaleziono: %s, Poziom: %d, Status: %s\n", current->imie, current->poziom, status_na_string(current->status));
+                licznik++;
+            }
+            current = current->next;
+        }
+    } else {
+        int min_p;
+        printf("Podaj min. poziom: ");
+        while(1) {
+            if (scanf("%d", &min_p) != 1) {
+            printf("Blad: Podaj liczbe!\n");
+            while(getchar() != '\n');
+            }
+        else {
+            break;
+        }
+        }
+
+        Hero* current = head;
+        while(current) {
+            if (current->poziom >= min_p)
+                printf("%s (lvl %d)\n", current->imie, current->poziom);
+                licznik++;
+            current = current->next;
+        }
+    }
+    if(licznik == 0)
+        printf("Nie znaleziono takiej osoby\n");
+}
+
+void modyfikuj_bohatera(Hero* head) {
+    char imie[101];
+    printf("Podaj imie bohatera do edycji: ");
+    scanf("%100s", imie);
+    Hero* current = head;
+    int licznik = 0;
+    while(current) {
+        if (strcmp(current->imie, imie) == 0) {
+            printf("Edycja bohatera: %s (Imie niezmienialne)\n")
+            licznik++;
+            printf("Nowy poziom: ");
+            scanf("%d", &current->poziom);
+            printf("Nowy status (0-Aktywny, 1-Misja, 2-Ranny, 3-Zaginiony, 4-Zawieszony): ");
+            int s;
+            scanf("%d", &s);
+            current->status = (Status)s;
+            printf("Dane zaktualizowane.\n");
+            return;
+        }
+        current = current->next;
+    }
+    if(licznik == 0)
+        printf("Nie znaleziono bohatera.\n");
+}
+
+void sortuj_i_wyswietl(Hero* head) {
+    if (!head) {
+        printf("Rejestr jest pusty - nie ma czego sortowac.\n");
+        return;
+    }
+
+    int wybor;
+    printf("\nWybor sortowania:\n1. Alfabetycznie (Imie)\n2. Liczbowo (Poziom)\nWybor: ");
+    scanf("%d", &wybor);
+
+    int zamiana;
+    Hero *ptr1;
+    Hero *lptr = NULL;
+
+    do {
+        zamiana = 0;
+        ptr1 = head;
+
+        while (ptr1->next != lptr) {
+            int warunek = 0;
+            if (wybor == 1) {
+                if (strcmp(ptr1->imie, ptr1->next->imie) > 0) warunek = 1;
+            } else {
+                if (ptr1->poziom < ptr1->next->poziom) warunek = 1;
+            }
+
+            if (warunek) {
+
+                Hero temp;
+
+                strcpy(temp.imie, ptr1->imie);
+                strcpy(temp.rasa, ptr1->rasa);
+                temp.poziom = ptr1->poziom;
+                temp.reputacja = ptr1->reputacja;
+                temp.status = ptr1->status;
+
+                // Przenoszenie danych z nastepnego wezla
+                strcpy(ptr1->imie, ptr1->next->imie);
+                strcpy(ptr1->rasa, ptr1->next->rasa);
+                ptr1->poziom = ptr1->next->poziom;
+                ptr1->reputacja = ptr1->next->reputacja;
+                ptr1->status = ptr1->next->status;
+
+                // Przywracanie z struktury pomocniczej
+                strcpy(ptr1->next->imie, temp.imie);
+                strcpy(ptr1->next->rasa, temp.rasa);
+                ptr1->next->poziom = temp.poziom;
+                ptr1->next->reputacja = temp.reputacja;
+                ptr1->next->status = temp.status;
+
+                zamiana = 1;
+            }
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+    } while (zamiana);
+
+    printf("\nPOSORTOWANY REJESTR:\n");
+    wyswietl_liste(head);
+}
+
+Hero* rejestracja(Hero* head) {
+    char temp_imie[101];
+
+    printf("Podaj imie bohatera: ");
+    scanf("%100s", temp_imie);
+
+    Hero* current = head;
+
+    while (current != NULL) {
+        if (strcmp(current->imie, temp_imie) == 0) {
+            printf("Blad: Bohater o imieniu '%s' juz istnieje w rejestrze!\n", temp_imie);
+            return head;
+        }
+        current = current->next;
+    }
+
+    Hero* nowy = (Hero*)malloc(sizeof(Hero));
+    if (nowy == NULL) {
+        fprintf(stderr, "Blad krytyczny: Nie udalo sie przydzielic pamieci!\n");
+        return head;
+    }
+
+    strcpy(nowy->imie, temp_imie);
+
+    printf("Podaj rase: ");
+    scanf("%49s", nowy->rasa);
+
+    printf("Podaj poziom doswiadczenia: ");
+    if (scanf("%d", &nowy->poziom) != 1) {
+        printf("Nieprawidlowy format liczby!\n");
+        free(nowy);
+        return head;
+    }
+
+    printf("Podaj reputacje (0-100): ");
+    scanf("%d", &nowy->reputacja);
+
+    nowy->status = AKTYWNY;
+
+    nowy->next = head;
+
+    printf("Bohater %s zostal pomyslnie dodany do rejestru.\n", nowy->imie);
+
+    return nowy;
+}
+
+Hero* usun_bohatera(Hero* head, char* imie_do_usuniecia) {
+    if (head == NULL) {
+        printf("Rejestr jest pusty, nie ma kogo usunac.\n");
+        return NULL;
+    }
+
+    Hero* current = head;
+    Hero* prev = NULL;
+
+    while (current != NULL && strcmp(current->imie, imie_do_usuniecia) != 0) {
+        prev = current;
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        printf("Bohater o imieniu '%s' nie jest w rejestrze.\n", imie_do_usuniecia);
+        return head;
+    }
+
+    if (current->status == NA_MISJI) {
+        fprintf(stderr, "BLAD: Nie mozna usunac bohatera %s, poniewaz przebywa na misji!\n", current->imie);
+        return head;
+    }
+
+    if (prev == NULL) {
+        head = current->next;
+    }
+    else {
+        prev->next = current->next;
+    }
+
+    free(current);
+    printf("Bohater %s zostal pomyslnie wykreslony z rejestru.\n", imie_do_usuniecia);
+
+    return head;
+}
+
+Hero* wczytaj_z_pliku(Hero* head, const char* nazwa_pliku) {
+    FILE* plik = fopen(nazwa_pliku, "r");
+
+    if (plik == NULL) {
+        printf("Plik '%s' nie istnieje. Rozpoczynanie z pustym rejestrem.\n", nazwa_pliku);
+        return head;
+    }
+
+    char t_imie[101], t_rasa[50];
+    int t_poziom, t_reputacja, t_status;
+    int licznik = 0;
+
+
+    while (fscanf(plik, "%100s %49s %d %d %d", t_imie, t_rasa, &t_poziom, &t_reputacja, &t_status) == 5) {
+        Hero* nowy = (Hero*)malloc(sizeof(Hero));
+        if (nowy == NULL) break;
+
+        strcpy(nowy->imie, t_imie);
+        strcpy(nowy->rasa, t_rasa);
+        nowy->poziom = t_poziom;
+        nowy->reputacja = t_reputacja;
+        nowy->status = (Status)t_status;
+
+        nowy->next = head;
+        head = nowy;
+        licznik++;
+    }
+
+    fclose(plik);
+    if (licznik > 0) {
+        printf("Pomyslnie wczytano %d bohaterow z pliku.\n", licznik);
+    }
+    return head;
+}
+
+void zapisz_do_pliku(Hero* head, const char* nazwa_pliku) {
+
+    FILE* plik = fopen(nazwa_pliku, "w");
+
+    if (plik == NULL) {
+        fprintf(stderr, "Blad: Nie udalo sie otworzyc pliku '%s' do zapisu!\n", nazwa_pliku);
+        return;
+    }
+
+    Hero* current = head;
+    int licznik = 0;
+
+    while (current != NULL) {
+        fprintf(plik, "%s %s %d %d %d\n",
+                current->imie,
+                current->rasa,
+                current->poziom,
+                current->reputacja,
+                current->status);
+
+        current = current->next;
+        licznik++;
+    }
+
+    fclose(plik);
+    printf("Pomyslnie zapisano %d bohaterow do pliku: %s\n", licznik, nazwa_pliku);
+}
+
+void zwolnij_liste(Hero* head) {
+    Hero* current = head;
+    Hero* nastepny;
+
+    while (current != NULL) {
+        nastepny = current->next;
+
+        printf("Zwalnianie pamieci dla bohatera: %s\n", current->imie);
+        free(current);
+
+        current = nastepny;
+    }
+
+    printf("Pamiec zostala wyczyszczona.\n");
+}
+
+int main(int liczba_arg, char *v_arg[]) {
+
+    if (liczba_arg < 2) {
+        printf("Blad! Musisz podac nazwe pliku. Przyklad:\n");
+        printf("%s moja_baza.txt\n", v_arg[0]);
+        return 1;
+    }
+
+    char *nazwa_pliku = v_arg[1];
+    Hero *head = NULL;
+    int wybor;
+
+    head = wczytaj_z_pliku(head, nazwa_pliku);
+
+    printf("--- Rejestr Bohaterow Gildii Poszukiwaczy Przygod ---\n");
+
+    while (1) {
+        printf("\nMENU GILDII:\n");
+        printf("1. Wyswietl wszystkich bohaterow\n");
+        printf("2. Dodaj nowego bohatera\n");
+        printf("3. Usun bohatera\n");
+        printf("4. Wyszukaj bohatera\n");
+        printf("5. Modyfikuj bohatera\n");
+        printf("6. Posortuj bohaterow\n");
+        printf("7. Zapisz do pliku\n");
+        printf("8. Wyjdz z rejestru gildii\n");
+        printf("Wybor: ");
+
+        if (scanf("%d", &wybor) != 1) {
+            printf("Blad: Podaj liczbe!\n");
+            while(getchar() != '\n');
+            continue;
+        }
+
+        switch (wybor) {
+            case 1:
+                wyswietl_liste(head);
+                break;
+
+            case 2:
+                head = rejestracja(head);
+                break;
+
+            case 3:
+                {
+                    char imie_do_usuniecia[101];
+                    printf("Podaj imie bohatera do usuniecia: ");
+                    scanf("%100s", imie_do_usuniecia);
+                    head = usun_bohatera(head, imie_do_usuniecia);
+                }
+                break;
+
+            case 4:
+                wyszukaj_bohatera(head);
+                break;
+
+            case 5:
+                modyfikuj_bohatera(head);
+                break;
+
+           case 6:
+                sortuj_i_wyswietl(head);
+                break;
+
+            case 7:
+                zapisz_do_pliku(head, nazwa_pliku);
+                break;
+
+            case 8:
+                zwolnij_liste(head);
+
+                printf("Wyjscie z rejestru gildii\n");
+                return 0;
+
+            default:
+                printf("Niepoprawny wybor. Sprobuj ponownie.\n");
+        }
+    }
+
+    return 0;
+}
